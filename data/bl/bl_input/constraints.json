@@ -1,0 +1,22 @@
+{
+  "universe_assets": [
+    "LLY",
+    "NVDA",
+    "PWR",
+    "AVGO",
+    "KLAC",
+    "LRCX",
+    "PGR",
+    "FTNT",
+    "MU",
+    "ANET"
+  ],
+  "n_assets": 10,
+  "tau": 0.1,
+  "risk_aversion_delta": 3.0,
+  "max_weight_constraint": 0.2,
+  "n_long_short": 2,
+  "view_type": "Top2_minus_Bottom2",
+  "eval_start": "2021-01",
+  "refit_every_months": 12
+}

@@ -1,0 +1,4 @@
+﻿portfolio,n_names,months,ex_ret_ann,vol_ann,sharpe,ff3_alpha_ann,t_alpha,b_mkt,s_smb,h_hml
+Selected Portfolio (EW),10,118,0.3967,0.2339,1.696,0.2439,5.2499,1.153,0.013,-0.2604
+Balanced Universe (EW),309,118,0.1709,0.1621,1.0539,0.0496,3.7768,0.9641,-0.0068,0.2767
+Market Benchmark (Mkt-RF),1,118,0.1297,0.1598,0.8112,0.0,,1.0,0.0,0.0

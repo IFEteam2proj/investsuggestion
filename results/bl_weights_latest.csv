@@ -1,0 +1,11 @@
+﻿Ticker,Name,MarketCap_Weight,Equal_Weight,Prior_Return_Ann,XGBoost_Return_Ann,BL_Expected_Return_Ann,BL_Unconstrained_Weight,BL_Constrained_Weight,Tilt_vs_MarketCap
+LLY,Eli Lilly and Company Common Stock,0.134,0.1,0.0925,0.1792,0.0944,0.134,0.1465,0.0124
+NVDA,NVIDIA Corporation Common Stock,0.5036,0.1,0.2799,0.1362,0.2773,0.4903,0.2,-0.3036
+PWR,"Quanta Services, Inc. Common Stock",0.01,0.1,0.1383,0.235,0.143,0.0233,0.0588,0.0488
+AVGO,Broadcom Inc. Common Stock,0.1603,0.1,0.214,0.1544,0.2083,0.147,0.1698,0.0095
+KLAC,KLA Corporation Common Stock,0.0206,0.1,0.1622,0.2134,0.1718,0.0206,0.0,-0.0206
+LRCX,Lam Research Corporation Common Stock,0.0291,0.1,0.2498,0.2039,0.2614,0.0291,0.0551,0.026
+PGR,Progressive Corporation (The) Common Stock,0.0134,0.1,-0.0277,0.1901,-0.0274,0.0134,0.0949,0.0815
+FTNT,"Fortinet, Inc. Common Stock",0.0095,0.1,0.1066,0.2307,0.112,0.0095,0.0297,0.0202
+MU,"Micron Technology, Inc. Common Stock",0.0978,0.1,0.4166,0.7799,0.439,0.1111,0.1064,0.0086
+ANET,"Arista Networks, Inc. Common Stock",0.0217,0.1,0.1973,0.1787,0.1956,0.0217,0.1388,0.1171

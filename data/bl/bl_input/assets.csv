@@ -1,0 +1,11 @@
+﻿rank,Ticker,PERMNO,name,marketCap,marketCap_weight
+1,LLY,50876,Eli Lilly and Company Common Stock,1325867231791.0,0.134
+2,NVDA,86580,NVIDIA Corporation Common Stock,4981229000000.0,0.5036
+3,PWR,85792,"Quanta Services, Inc. Common Stock",98994884265.0,0.01
+4,AVGO,93002,Broadcom Inc. Common Stock,1585465687062.0,0.1603
+5,KLAC,46886,KLA Corporation Common Stock,203522732347.0,0.0206
+6,LRCX,48486,Lam Research Corporation Common Stock,288208733120.0,0.0291
+7,PGR,64390,Progressive Corporation (The) Common Stock,132737667914.0,0.0134
+8,FTNT,93132,"Fortinet, Inc. Common Stock",94123664920.0,0.0095
+9,MU,53613,"Micron Technology, Inc. Common Stock",967479988581.0,0.0978
+10,ANET,14714,"Arista Networks, Inc. Common Stock",214294679942.0,0.0217
