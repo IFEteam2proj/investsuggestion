@@ -1,6 +1,7 @@
 # Quantitative Investment & Asset Allocation Pipeline
 
 미국 시총 상위 80% 대형주 유니버스(319개 종목)를 대상으로 한 수익률 데이터베이스 구축, **Fama-French 3-Factor (FF3) 모형 기반 종목 선정**, 그리고 **XGBoost 머신러닝 견해(Views)를 결합한 Black-Litterman (BL) 포트폴리오 최적화 자산배분 시스템**입니다.
+https://snpivsuggest.streamlit.app/
 
 ---
 
