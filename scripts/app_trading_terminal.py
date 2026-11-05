@@ -200,8 +200,12 @@ def load_all_terminal_data():
     else:
         data['views'] = pd.DataFrame()
 
-    if os.path.exists(PATH_PRICES_CACHE):
-        data['prices_daily'] = pd.read_parquet(PATH_PRICES_CACHE)
+    PATH_PRICES_CACHE_DIR = os.path.join(RAW_DATA_DIR, 'prices_cache.parquet')
+    PATH_PRICES_CACHE_DOT = os.path.join(RAW_DATA_DIR, '.cache', 'prices_cache.parquet')
+    if os.path.exists(PATH_PRICES_CACHE_DIR):
+        data['prices_daily'] = pd.read_parquet(PATH_PRICES_CACHE_DIR)
+    elif os.path.exists(PATH_PRICES_CACHE_DOT):
+        data['prices_daily'] = pd.read_parquet(PATH_PRICES_CACHE_DOT)
     else:
         data['prices_daily'] = pd.DataFrame()
 
@@ -380,16 +384,38 @@ with tab1:
     st.caption("현재 주가를 반영한 목표 비중 배정 금액 및 필요 주문 주수(Shares) 산출표")
 
     latest_prices = {}
+    # 1. First priority: Read directly from df_weights_active if 'Last_Price' exists
+    if 'Last_Price' in df_weights_active.columns:
+        for _, row in df_weights_active.iterrows():
+            p_val = row.get('Last_Price')
+            if pd.notna(p_val) and float(p_val) > 0:
+                latest_prices[row['Ticker']] = round(float(p_val), 2)
+
+    # 2. Second priority: Read latest valid closing quote from df_prices_daily
     if not df_prices_daily.empty:
-        last_daily = df_prices_daily.iloc[-1]
         for tkr in df_weights_active['Ticker']:
-            latest_prices[tkr] = float(last_daily.get(tkr, 100.0))
-    else:
-        for tkr in df_weights_active['Ticker']:
-            latest_prices[tkr] = 100.0
+            if tkr in df_prices_daily.columns:
+                s_px = df_prices_daily[tkr].dropna()
+                if not s_px.empty:
+                    latest_prices[tkr] = round(float(s_px.iloc[-1]), 2)
+
+    # 3. Third priority: Live fetch from yfinance if any ticker is still missing
+    missing_tkrs = [t for t in df_weights_active['Ticker'] if t not in latest_prices or latest_prices[t] <= 0]
+    if missing_tkrs:
+        try:
+            import yfinance as yf
+            live_data = yf.download(missing_tkrs, period='5d', progress=False)
+            close_data = live_data['Close'] if 'Close' in live_data else live_data
+            for tkr in missing_tkrs:
+                if tkr in close_data.columns:
+                    s_live = close_data[tkr].dropna()
+                    if not s_live.empty:
+                        latest_prices[tkr] = round(float(s_live.iloc[-1]), 2)
+        except Exception:
+            pass
 
     df_grid = df_weights_active.copy()
-    df_grid['Last_Price'] = df_grid['Ticker'].map(latest_prices).round(2)
+    df_grid['Last_Price'] = df_grid['Ticker'].map(latest_prices).fillna(100.0).round(2)
     df_grid['Alloc_USD'] = (df_grid['BL_Constrained_Weight'] * capital).round(2)
     df_grid['Target_Shares'] = (df_grid['Alloc_USD'] / df_grid['Last_Price']).fillna(0).astype(int)
 
