@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFE Team #2 | Black-Litterman × Factor-Alpha × Machine Learning</title>
+  <meta name="description" content="Fama-French 3-Factor 알파 스크리닝과 머신러닝 수익률 예측 뷰를 결합한 블랙-리터만 포트폴리오 최적화 프로젝트 아카이브" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="brand">
+        <span class="brand-badge">IFE Team #2</span>
+        <span>BL × Factor-Alpha × ML Research</span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link active">메인 대시보드</a></li>
+        <li><a href="methodology.html" class="nav-link">방법론 &amp; 파이프라인</a></li>
+        <li><a href="results.html" class="nav-link">성과 분석 (2011–2020)</a></li>
+        <li><a href="qa-analysis.html" class="nav-link">Q&amp;A 검증 &amp; OOS (2021–2025)</a></li>
+        <li><a href="meetings.html" class="nav-link">회의록 &amp; 프로젝트 히스토리</a></li>
+        <li><a href="code-papers.html" class="nav-link">코드 아키텍처 &amp; 문헌</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="theme-btn" id="themeToggle" title="테마 전환">🌙</button>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" title="메뉴 열기">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Hero Banner -->
+    <section class="hero">
+      <div class="hero-eyebrow">
+        <span>🏛️ 한양대학교 금융공학개론 (Introduction to Financial Engineering) · Team #2 최종 연구 포털</span>
+      </div>
+      <h1>팩터 알파 스크리닝과 머신러닝 예측 뷰를 결합한<br />블랙-리터만 포트폴리오 최적화</h1>
+      <p class="hero-subtitle">
+        <strong>Black-Litterman Portfolio Optimization with Factor-Alpha Screening and Machine Learning Views</strong><br />
+        Fama-French 3-Factor 모형 기반의 구조적 종목 선정(2,426개 → 20개), Expanding-Window 머신러닝 기대수익률 예측(5개 모델), 
+        Idzorek(2005) 신뢰도 공식을 결합한 블랙-리터만 뷰 통합(8개 뷰 구성법), 그리고 제약 조건부 평균-분산 최적화(SLSQP)까지 
+        총 40개(5×8) 전략 조합의 10년(2011–2020) 백테스트 및 미관측 표본 외(2021–2025) 강건성 검증 전 과정을 집대성한 웹사이트입니다.
+      </p>
+      <div class="hero-actions">
+        <a href="methodology.html" class="btn btn-primary">📐 4단계 방법론 상세 보기</a>
+        <a href="results.html" class="btn btn-outline">📊 40개 전략 조합 &amp; 성과 탐색</a>
+        <a href="qa-analysis.html" class="btn btn-outline">🔍 21개 Q&amp;A 심층 검증 &amp; 2021–2025 OOS</a>
+        <a href="https://snpivsuggest.streamlit.app/" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="background: rgba(16, 185, 129, 0.18); border-color: rgba(52, 211, 153, 0.55); color: #ecfdf5;">🚀 실시간 오늘의 포트폴리오 추천 웹앱 (Live) ↗</a>
+        <a href="assets/docs/Team2_Project_Report_KOREAN.docx" class="btn btn-outline" download>📥 최종 보고서 (KOR)</a>
+        <a href="assets/docs/Answer_KOR.pdf" class="btn btn-outline" download>📥 Q&amp;A 심층 답안 (PDF)</a>
+      </div>
+      <div class="hero-meta">
+        <span><strong>분석 유니버스:</strong> 미국 상장 주식 (CRSP, 2000–2020 및 WRDS 2021–2025 연장)</span>
+        <span><strong>메인 전략:</strong> XGBoost × M4 (Identity Absolute Views, $\delta=3$, $\tau=0.1$, 20% Cap)</span>
+        <span><strong>거래비용:</strong> 편도 20bp (턴오버 비례 차감)</span>
+        <span><strong>참여 연구진:</strong> 김도현 · 나근석 · 남현주 · 박진영 · 백상준 · 황도훈</span>
+      </div>
+    </section>
+
+    <!-- Key KPI Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Main Portfolio Net CAGR (2011–2020)</div>
+        <div class="kpi-value positive">19.68%</div>
+        <div class="kpi-sub">
+          <span class="badge badge-green">+5.80%p vs S&amp;P 500</span>
+          <span>Gross 20.82% ($t=2.26$, $p=0.026$)</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">10년 누적 순수익률 (<span class="currency">$</span>100 투자 시)</div>
+        <div class="kpi-value accent">+503.1%</div>
+        <div class="kpi-sub">
+          <span><strong><span class="currency">$</span>603.09</strong> 도달</span>
+          <span>(S&amp;P 500 <span class="currency">$</span>367.00 · EW20 <span class="currency">$</span>340.11)</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">연율화 샤프 비율 (Net Sharpe, GS1)</div>
+        <div class="kpi-value positive">1.15</div>
+        <div class="kpi-sub">
+          <span>연율 변동성 <strong>16.11%</strong></span>
+          <span>(S&amp;P 500 0.98 · EW20 0.78)</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">최대낙폭 (Max Drawdown)</div>
+        <div class="kpi-value">-19.55%</div>
+        <div class="kpi-sub">
+          <span class="badge badge-blue">S&amp;P 500 (-19.60%)과 동등</span>
+          <span>EW20 (-25.07%) 대비 방어력 우위</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">사전 확정(Ex-Ante) 파이프라인 CAGR</div>
+        <div class="kpi-value positive">20.15%</div>
+        <div class="kpi-sub">
+          <span>Elastic Net × M4, $\delta=2.09$</span>
+          <span>2010년 말 시점 선택 ($t=2.08$)</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">미관측 표본 외 (2021–2025) 검증</div>
+        <div class="kpi-value warning">5.51%</div>
+        <div class="kpi-sub">
+          <span class="badge badge-amber">S&amp;P 500 (14.43%) 하회</span>
+          <span>투명한 한계 규명 및 원인 분해 완료</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: Interactive Performance Overview -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">1</span> 핵심 백테스트 성과 대시보드 (2011.01 – 2020.12, 120개월)</h2>
+          <p class="section-desc">2000–2010년 FF3 알파 스크리닝으로 선정된 20개 종목에 대해 매월 워크포워드 ML 예측과 블랙-리터만 최적화를 수행한 결과입니다.</p>
+        </div>
+        <div class="pill-group">
+          <button class="pill-btn scale-toggle-btn active" data-scale="linear">선형 스케일 (<span class="currency">$</span>)</button>
+          <button class="pill-btn scale-toggle-btn" data-scale="logarithmic">로그 스케일 (Log <span class="currency">$</span>)</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">누적 포트폴리오 가치 추이 (<span class="currency">$</span>100 기준, 2011–2020)</div>
+              <div class="card-subtitle">Main (XGBoost × M4, Net/Gross) vs S&amp;P 500 TR vs Equal-Weight 20</div>
+            </div>
+            <span class="badge badge-blue">Interactive Chart.js</span>
+          </div>
+          <div class="chart-box">
+            <canvas id="wealthChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">전고점 대비 낙폭 (Underwater Drawdown %, 2011–2020)</div>
+              <div class="card-subtitle">코로나19 팬데믹(2020.03) 및 주요 조정장 구간의 하방 위험 비교</div>
+            </div>
+            <span class="badge badge-green">MDD -19.55%</span>
+          </div>
+          <div class="chart-box">
+            <canvas id="drawdownChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Comparison Table -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">주요 전략 및 벤치마크 성과 요약표 (2011–2020, 120개월)</div>
+            <div class="card-subtitle">보고서 본문 결과 및 Q&amp;A 심층 분석에서 검증된 핵심 벤치마크 대조</div>
+          </div>
+          <a href="results.html" class="btn btn-secondary">전체 40개 조합 결과 보기 →</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>포트폴리오 / 전략 설정</th>
+                <th class="num">누적 수익률</th>
+                <th class="num">연율 복리수익률 (CAGR)</th>
+                <th class="num">연율 변동성</th>
+                <th class="num">Sharpe (GS1)</th>
+                <th class="num">Sharpe (FF)</th>
+                <th class="num">최대낙폭 (MDD)</th>
+                <th class="num">월평균 턴오버</th>
+                <th class="num">S&amp;P 대비 초과 CAGR</th>
+                <th class="num">대응표본 $t$-통계량</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight-row">
+                <td><strong>Main: XGBoost × M4 (Net, $\delta=3$, 20% Cap)</strong></td>
+                <td class="num pos">+503.09%</td>
+                <td class="num pos"><strong>19.68%</strong></td>
+                <td class="num">16.11%</td>
+                <td class="num pos"><strong>1.15</strong></td>
+                <td class="num pos">1.16</td>
+                <td class="num">-19.55%</td>
+                <td class="num">39.20%</td>
+                <td class="num pos">+5.80%p</td>
+                <td class="num pos">2.26 ($p=0.026$)</td>
+              </tr>
+              <tr>
+                <td>Main: XGBoost × M4 (Gross, 거래비용 차감 전)</td>
+                <td class="num">+562.54%</td>
+                <td class="num">20.82%</td>
+                <td class="num">16.13%</td>
+                <td class="num">1.21</td>
+                <td class="num">1.22</td>
+                <td class="num">-19.22%</td>
+                <td class="num">39.20%</td>
+                <td class="num pos">+6.93%p</td>
+                <td class="num pos">2.67 ($p=0.009$)</td>
+              </tr>
+              <tr>
+                <td>Ex-Ante Pipeline: Elastic Net × M4 ($\delta=2.09$, 2010년 말 사전 확정)</td>
+                <td class="num pos">+527.14%</td>
+                <td class="num pos">20.15%</td>
+                <td class="num">17.58%</td>
+                <td class="num pos">1.09</td>
+                <td class="num">—</td>
+                <td class="num">-20.60%</td>
+                <td class="num">57.22%</td>
+                <td class="num pos">+6.27%p</td>
+                <td class="num pos">2.08 ($p=0.040$)</td>
+              </tr>
+              <tr>
+                <td>Market Prior Only (뷰 없음, $\Pi = \delta\Sigma w_{mkt}+r_f$, 20% Cap)</td>
+                <td class="num">+267.56%</td>
+                <td class="num">13.90%</td>
+                <td class="num">15.62%</td>
+                <td class="num">0.87</td>
+                <td class="num">—</td>
+                <td class="num">-21.79%</td>
+                <td class="num">11.76%</td>
+                <td class="num">+0.02%p</td>
+                <td class="num">0.14 ($p=0.889$)</td>
+              </tr>
+              <tr>
+                <td>Equal-Weight Prior + XGBoost × M4 ($\Pi_{EW}$, 시총 정보 배제)</td>
+                <td class="num pos">+429.34%</td>
+                <td class="num pos">18.13%</td>
+                <td class="num">16.65%</td>
+                <td class="num pos">1.04</td>
+                <td class="num">1.05</td>
+                <td class="num">-20.70%</td>
+                <td class="num">43.51%</td>
+                <td class="num pos">+4.25%p</td>
+                <td class="num">1.60 ($p=0.112$)</td>
+              </tr>
+              <tr>
+                <td><strong>Benchmark 1: S&amp;P 500 Total Return Index</strong></td>
+                <td class="num">+267.00%</td>
+                <td class="num"><strong>13.88%</strong></td>
+                <td class="num">13.54%</td>
+                <td class="num">0.98</td>
+                <td class="num">0.98</td>
+                <td class="num">-19.60%</td>
+                <td class="num">—</td>
+                <td class="num">0.00%p</td>
+                <td class="num">—</td>
+              </tr>
+              <tr>
+                <td><strong>Benchmark 2: Equal-Weight 20 (동일 20종목 균등비중, Net)</strong></td>
+                <td class="num">+240.11%</td>
+                <td class="num"><strong>13.02%</strong></td>
+                <td class="num">16.48%</td>
+                <td class="num">0.78</td>
+                <td class="num">0.79</td>
+                <td class="num">-25.07%</td>
+                <td class="num">6.42%</td>
+                <td class="num neg">-0.86%p</td>
+                <td class="num">-0.14 (Main 대비 $t=2.47$)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: 4-Stage Pipeline Overview -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">2</span> 4단계 퀀트 투자 프레임워크 아키텍처</h2>
+          <p class="section-desc">고전적 마코위츠 평균-분산 최적화(MVO)의 추정 오차 증폭 문제를 해결하기 위해 팩터 스크리닝, 머신러닝, 베이지안 사전분포를 결합했습니다.</p>
+        </div>
+        <a href="methodology.html" class="btn btn-accent">수식 및 방법론 전문 보기 →</a>
+      </div>
+
+      <div class="pipeline-steps">
+        <div class="step-card">
+          <div class="step-num">Stage 01 · Security Selection</div>
+          <h3>Fama-French 3-Factor 알파 스크리닝</h3>
+          <p>2000–2010년(132개월) 완전 균형 패널 2,426개 상장 종목을 대상으로 FF3 시계열 회귀를 수행하여 시장·규모·가치 팩터로 설명되지 않는 구조적 초과수익($\alpha$) 종목을 추출합니다.</p>
+          <ul>
+            <li>유동성 필터(하위 20% 제외) 및 변동성 가드($\sigma_i \le 2\sigma_{mkt}$)</li>
+            <li>$\hat{\alpha}_i > 0$ 및 $t(\hat{\alpha}_i) \ge 2.0$ 통과 131개 종목</li>
+            <li>$t(\hat{\alpha}_i)$ (= Appraisal Ratio 순위 동치) 상위 20개 선정</li>
+          </ul>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 02 · ML Return Forecasting</div>
+          <h3>Expanding-Window 머신러닝 예측</h3>
+          <p>Gu, Kelly &amp; Xiu(2020)에 기반한 8개 가격·거래량 특성(모멘텀, 수익률 변동성, 거래대금, 베타, 고유변동성)으로 매월 개별 종목의 다음 달 수익률을 예측합니다.</p>
+          <ul>
+            <li>2004년 12월~2019년 12월 매년 말 Expanding-Window 재학습</li>
+            <li>36개월 시간순 검증 분리로 하이퍼파라미터 튜닝 (미래정보 누수 차단)</li>
+            <li><strong>XGBoost (Main)</strong>, Elastic Net, RandomForest, Transformer, ANN 비교</li>
+          </ul>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 03 · Black-Litterman Integration</div>
+          <h3>블랙-리터만 뷰 행렬($P, Q, \Omega$) 결합</h3>
+          <p>시총가중 균형초과수익률($\Pi = \delta\Sigma w_{mkt} + r_f$)을 베이지안 사전분포로 두고, ML 예측값을 8가지 뷰 행렬($P$) 구조로 변환하여 사후 기대수익률($\mu_{BL}$)을 도출합니다.</p>
+          <ul>
+            <li><strong>M4 (Identity, $P=I$)</strong> 절대 뷰 vs 팩터/비례 롱숏 상대 뷰(M1~M3, M5)</li>
+            <li>Idzorek(2005) 50% 신뢰도 공식 적용: $\Omega = \tau\operatorname{diag}(P\Sigma P^\top)$</li>
+            <li>사후 기대수익률 $\mu_{BL}$이 스칼라 $\tau$ 값에 수학적으로 불변임을 증명</li>
+          </ul>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">Stage 04 · Constrained MVO Backtest</div>
+          <h3>제약 조건부 최적화 &amp; 120개월 리밸런싱</h3>
+          <p>블랙-리터만 사후 평균·공분산($\mu_{BL}, \Sigma_{BL}$)을 목적함수에 투입하여 SLSQP 알고리즘으로 매월 최적 포트폴리오 비중을 산출하고 성과를 평가합니다.</p>
+          <ul>
+            <li>공매도 금지($w_i \ge 0$), 전액 투자($\sum w_i = 1$), 단일 종목 상한($w_i \le 0.20$)</li>
+            <li>편도 20bp 거래비용 차감 및 상장폐지 4개 종목(PCP, GMCR, STR, PX) 처리</li>
+            <li>시장 국면(강세·회복·횡보·위기) 및 파라미터 민감도 검증</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrap">
+          <img src="assets/img/fig1_framework.png" alt="Figure 1: 4단계 투자 프레임워크 구조도" class="zoomable-img" />
+        </div>
+        <div class="figure-caption">
+          <span><strong>Figure 1. 전체 4단계 투자 프레임워크 구조도:</strong> 데이터 전처리 및 FF3 알파 스크리닝(Stage 1) → 워크포워드 ML 수익률 예측(Stage 2) → 블랙-리터만 뷰 통합(Stage 3) → 제약 조건부 MVO 및 월간 리밸런싱 백테스트(Stage 4). (이미지를 클릭하면 원본 크기로 확대됩니다.)</span>
+          <span class="badge badge-gray">Click to Zoom</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Return Decomposition & Honest Findings -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">3</span> 초과수익 원천 분해 &amp; 심층 검증 핵심 결론</h2>
+          <p class="section-desc">동료 평가에서 제기된 21개 질문에 답하기 위해 전체 파이프라인을 밑바닥부터 재구축하며 도출한 투명하고 엄밀한 실증 결론입니다.</p>
+        </div>
+        <a href="qa-analysis.html" class="btn btn-secondary">21개 Q&amp;A 및 2021–2025 검증 전문 →</a>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="badge badge-green" style="margin-bottom: 0.75rem;">성과 분해 (Attribution)</span>
+          <h3 class="card-title" style="margin-bottom: 0.5rem;">+5.80%p 초과수익의 3단계 분해</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            S&amp;P 500(13.88%) 대비 메인 전략(19.68%)이 달성한 <strong>+5.80%p</strong>의 연간 초과 복리수익률을 단계별로 분해하면 다음과 같습니다:
+          </p>
+          <ul style="font-size: 0.88rem; color: var(--text-secondary); padding-left: 1.15rem;">
+            <li><strong>① 종목 선정 단계 (FF3 Top 20 EW):</strong> 13.02% (S&amp;P 대비 <span class="neg">-0.86%p</span>) — 단순 균등보유만으로는 지수를 이기지 못함.</li>
+            <li><strong>② BL 균형 사전분포 배분 (뷰 없음):</strong> 13.90% (EW20 대비 <span class="pos">+0.88%p</span>) — 시총 가중 사전분포가 우량 대형주 비중을 회복시킴.</li>
+            <li><strong>③ 머신러닝 뷰 (XGBoost × M4):</strong> 19.68% (사전분포 대비 <span class="pos"><strong>+5.78%p</strong></span>) — 초과성과의 거의 전부가 ML 예측 뷰에서 창출됨.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-blue" style="margin-bottom: 0.75rem;">뷰 구조의 지배력 (ANOVA)</span>
+          <h3 class="card-title" style="margin-bottom: 0.5rem;">왜 M4(절대 뷰)가 85.3%를 설명하는가?</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            40개(5×8) 조합의 CAGR에 대한 이원 분산분석(2-way ANOVA) 결과, <strong>뷰 구성 방식($P$)이 전체 변동의 85.3%</strong>를 설명한 반면 ML 모델 종류는 4.5%에 그쳤습니다.
+          </p>
+          <ul style="font-size: 0.88rem; color: var(--text-secondary); padding-left: 1.15rem;">
+            <li><strong>M4 ($P=I_N$):</strong> 20개 종목 각각의 기대수익률을 독립적인 20개 절대 뷰로 전달하여 예측 신호의 방향과 크기를 온전히 보존 (XGBoost 19.68%, Elastic Net 19.46%, RF 18.85%).</li>
+            <li><strong>M1~M3, M5 (단일/소수 롱숏 상대 뷰):</strong> 20차원 예측 벡터를 1~2개의 스칼라 스프레드로 압축하면서 개별 종목 알파 정보가 소실되어 균형 사전분포(~13.8%)로 수렴.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-amber" style="margin-bottom: 0.75rem;">엄밀한 사후 감사 (Post-Audit)</span>
+          <h3 class="card-title" style="margin-bottom: 0.5rem;">통계적 다중검정 &amp; 2021–2025 표본 외 한계</h3>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            우리는 유리한 수치만 부각하지 않고, 다중검정 보정과 미관측 기간(2021–2025) 테스트를 통해 전략의 구조적 한계를 투명하게 검증했습니다:
+          </p>
+          <ul style="font-size: 0.88rem; color: var(--text-secondary); padding-left: 1.15rem;">
+            <li><strong>다중검정 보정:</strong> 단일 검정 $p=0.026$이나, 40개 조합 탐색을 고려한 White's Reality Check(부트스트랩 $B=5000$)에서는 $p=0.095$(10% 수준 경계적 유의).</li>
+            <li><strong>연간 재선정 실험:</strong> 매년 FF3로 종목을 갈아끼우면 10년 추정창의 지연(lag)으로 2016년부터 AAPL이 탈락하고 방어주에 편중되어 CAGR이 18.13% → 10.52%로 하락.</li>
+            <li><strong>2021–2025 OOS:</strong> 2010–2020년 FF3 상위 20개가 저베타 유틸리티·지역은행에 집중되면서 빅테크 주도 장세(S&amp;P 14.43%) 대비 5.51%에 머묾을 확인.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Streamlit Web App Banner -->
+    <section class="section">
+      <div class="card" style="border: 2px solid var(--accent-primary); background: linear-gradient(135deg, var(--bg-surface) 0%, var(--accent-soft) 100%);">
+        <div class="section-header" style="margin-bottom: 1rem;">
+          <div>
+            <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.45rem;">
+              <span class="badge badge-green">LIVE WEB APPLICATION · Streamlit HTS</span>
+              <span class="badge badge-blue">US Top 80% Universe (319 Stocks)</span>
+            </div>
+            <h2 class="section-title" style="font-size: 1.35rem;">📈 실전 확장 서비스: 오늘 당일 미국 주식 포트폴리오 구성 추천 터미널</h2>
+            <p class="section-desc" style="margin-top: 0.25rem;">
+              본 연구의 4단계 파이프라인(<code>FF3 알파 스크리닝 → XGBoost 예측 뷰 → Black-Litterman 최적화</code>)을 <strong>현재 시점의 미국 시총 상위 80% 대형주 유니버스</strong>에 실시간 연동하여, <strong>오늘 당일의 목표 종목 비중과 실제 매수 주문 수량(Shares)</strong>을 즉시 산출해 주는 웹 트레이딩 터미널입니다.
+            </p>
+          </div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+            <a href="https://snpivsuggest.streamlit.app/" target="_blank" rel="noopener noreferrer" class="btn btn-accent">🚀 실시간 포트폴리오 추천 사이트 바로가기 ↗</a>
+            <a href="https://github.com/IFEteam2proj/investsuggestion" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">💻 앱 GitHub 저장소 ↗</a>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div style="background: var(--bg-surface); padding: 1rem 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.35rem; color: var(--text-primary);">🎛️ 당일 매수 주문 수량 &amp; 파라미터 제어</div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0;">
+              운용 자본금(<span class="currency">$</span> USD), 리밸런싱 기준일, 위험회피계수($\delta$), 뷰 비중($\tau$), 단일종목 상한(Cap 20%)을 직접 조절하면 최신 FF3 게이트 통과 우량주(<code>NVDA</code>, <code>AVGO</code>, <code>ANET</code>, <code>LLY</code>, <code>PGR</code> 등)의 당일 주가 기준 목표 배정액과 필요 주문 주수를 실시간 계산합니다.
+            </p>
+          </div>
+          <div style="background: var(--bg-surface); padding: 1rem 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.35rem; color: var(--text-primary);">🔮 다중 모델 궤적 예측 &amp; 몬테카를로</div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0;">
+              블랙-리터만 사후 기대수익률($E[R]$), XGBoost, AR(2) 자기회귀, 지수평활(ETS)을 결합한 개별 종목 미래 주가 궤적 및 전체 포트폴리오 1,000회 상관 가우시안 몬테카를로 자산가치 시뮬레이션을 제공합니다.
+            </p>
+          </div>
+          <div style="background: var(--bg-surface); padding: 1rem 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.35rem; color: var(--text-primary);">📊 시총 쏠림 완화 &amp; 최신 실증 백테스트</div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 0;">
+              시가총액 가중 시 단일 종목(<code>NVDA</code> 57.2%)에 쏠리는 집중 위험을 20% 상한과 ML 뷰로 분산하여, 최근 구간(2021–2026) MDD를 -43.6%에서 -26.6%로 낮추고 샤프 비율 1.64를 달성하는 과정을 시각화합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Sub-page Navigation Directory -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">4</span> 웹사이트 카테고리별 상세 페이지 안내</h2>
+          <p class="section-desc">아래 카드를 클릭하면 각 주제별로 정리된 수식, 인터랙티브 차트, 전체 데이터 테이블, 회의록 원문 및 실시간 추천 앱을 확인할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="nav-card-grid">
+        <a href="methodology.html" class="nav-card">
+          <div>
+            <div class="nav-card-icon">01</div>
+            <h3>방법론 &amp; 4단계 파이프라인</h3>
+            <p>데이터셋 명세, FF3 회귀식 및 선정 게이트, 5개 ML 모델 아키텍처와 8개 입력 특성, 블랙-리터만 베이지안 유도 및 Idzorek $\tau$-불변성 증명, 선정된 20개 종목 검색 테이블을 제공합니다.</p>
+          </div>
+          <div class="nav-card-footer">방법론 페이지로 이동 →</div>
+        </a>
+
+        <a href="results.html" class="nav-card">
+          <div>
+            <div class="nav-card-icon">02</div>
+            <h3>백테스트 성과 분석 (2011–2020)</h3>
+            <p>40개(5×8) 전략 조합 인터랙티브 히트맵 탐색기, 연도별 수익률 비교, 시장 국면(강세·회복·횡보·위기) 및 7대 역사적 에피소드 성과, 120개월 종목별 비중 추이 및 민감도 분석을 수록했습니다.</p>
+          </div>
+          <div class="nav-card-footer">성과 분석 페이지로 이동 →</div>
+        </a>
+
+        <a href="qa-analysis.html" class="nav-card">
+          <div>
+            <div class="nav-card-icon">03</div>
+            <h3>Q&amp;A 심층 검증 &amp; 2021–2025 OOS</h3>
+            <p>타 팀이 제기한 21개 질문 전수에 대한 실증 답변 아코디언, AAPL 집중도 및 상한(15%·10%) 실험, 위험회피계수 $\delta$ 캘리브레이션, 다중검정 보정, 연간 재선정 및 2021–2025 미관측 기간 테스트 결과를 다룹니다.</p>
+          </div>
+          <div class="nav-card-footer">Q&amp;A 및 OOS 검증 페이지로 이동 →</div>
+        </a>
+
+        <a href="meetings.html" class="nav-card">
+          <div>
+            <div class="nav-card-icon">04</div>
+            <h3>회의록 아카이브 &amp; 프로젝트 히스토리</h3>
+            <p>9월 7일 킥오프부터 11월 7일 최종 점검까지 총 9차례의 팀 회의 및 교수님 면담 기록 전문, 연구 방향의 피벗(DCC-GARCH 폐기, 백테스트 10년 확장, $\delta$ 보정 등) 타임라인, 타 팀 동료 평가서를 정리했습니다.</p>
+          </div>
+          <div class="nav-card-footer">회의록 &amp; 타임라인 페이지로 이동 →</div>
+        </a>
+
+        <a href="code-papers.html" class="nav-card">
+          <div>
+            <div class="nav-card-icon">05</div>
+            <h3>코드 아키텍처 &amp; 참고문헌 라이브러리</h3>
+            <p>전체 파이프라인(`1_Project_Data` ~ `7_QA_Analysis`, `run_all.py`) 폴더 구조와 모듈별 입출력 명세, 재현 실행 가이드, 보고서 인용 29편 및 사전 조사 논문 요약을 망라했습니다.</p>
+          </div>
+          <div class="nav-card-footer">코드 &amp; 문헌 페이지로 이동 →</div>
+        </a>
+
+        <a href="https://snpivsuggest.streamlit.app/" target="_blank" rel="noopener noreferrer" class="nav-card" style="border-color: var(--accent-primary);">
+          <div>
+            <div class="nav-card-icon" style="background: rgba(5, 150, 105, 0.14); color: var(--success);">LIVE</div>
+            <h3>오늘의 주식 포트폴리오 추천 앱 ↗</h3>
+            <p>본 프로젝트의 FF3 + XGBoost + Black-Litterman 엔진을 오늘 당일 미국 시총 상위 80% 주식에 적용하여 실시간 목표 비중, 매수 주문 주수, 미래 주가 궤적을 추천하는 Streamlit HTS 웹앱입니다.</p>
+          </div>
+          <div class="nav-card-footer" style="color: var(--success);">snpivsuggest.streamlit.app 접속 ↗</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Section 5: Team Members & Roles -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">5</span> Team #2 연구진 및 역할 분담</h2>
+          <p class="section-desc">모듈형 분업 아키텍처를 통해 데이터 전처리, 팩터 스크리닝, 5개 ML 모델 개발, BL 최적화 엔진 및 사후 검증을 완수했습니다.</p>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">김도현 (Dohyun Kim)</span>
+            <span class="badge badge-blue">BL Engine &amp; Pipeline Lead</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            블랙-리터만 최적화 엔진(<code>5_BL_Fin</code>) 및 백테스트 프레임워크(<code>6_Backtest</code>) 설계·구현, Transformer 뷰 생성 파이프라인 구축, BL 파라미터($\delta, \tau, \Omega$) 이론적 정립, 전체 코드베이스 통합(<code>run_all.py</code>) 및 GitHub 리포지토리 관리.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">나근석 (Geunseok Na)</span>
+            <span class="badge badge-green">XGBoost &amp; Transformer Lead</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            메인 예측 모델인 <strong>XGBoost</strong> 및 <strong>Transformer</strong> 수익률 예측 모듈(<code>4_Module_Based_ML</code>) 개발, Expanding-Window 워크포워드 검증 루프 구현, M1~M5 뷰 행렬($P, Q, \Omega$) 산출 및 하이퍼파라미터 그리드 튜닝.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">남현주 (Hyunju Nam)</span>
+            <span class="badge badge-purple">View Methodology &amp; Report</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            XGBoost 기반 뷰 생성 방법론 설계 참여, 팩터 로딩 기반 상대 뷰(M1~M3) 및 절대 뷰(M4) 비교 분석, 국·영문 최종 프로젝트 보고서(<code>Project_Report</code>) 집필 및 최종 발표 프레젠테이션 슬라이드 제작.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">박진영 (Jinyoung Park)</span>
+            <span class="badge badge-blue">FF3 Security Selection Lead</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            CRSP·FF3·FRED 원천 데이터 전처리(<code>1_Project_Data</code>), Fama-French 3-Factor OLS 회귀 및 4단계 종목 선정 파이프라인(<code>2_Fama French 3 factor model security selection</code>) 구축, 잔차 부트스트랩 및 다중검정 통계 진단 수행.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">백상준 (Sangjun Baek)</span>
+            <span class="badge badge-green">ANN &amp; Elastic Net Lead</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            3층 신경망(<strong>ANN</strong>) 및 <strong>Elastic Net</strong> 수익률 예측·뷰 생성 모듈(<code>4_Module_Based_ML</code>) 개발, 규제가 있는 선형 모형과 비선형 딥러닝 모형의 예측력 비교, 포트폴리오 시각화 및 발표자료 디자인.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">황도훈 (Dohun Hwang)</span>
+            <span class="badge badge-amber">RF, Calibration &amp; QA Lead</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-secondary);">
+            <strong>RandomForest</strong> 예측 및 뷰 생성 모듈 개발, 위험회피계수 $\delta$ 캘리브레이션(<code>3_setting_delta</code>) 및 문헌 조사, 동료 평가 21개 질문 대응 실증 분석 및 2021–2025 OOS 검증(<code>7_QA_Analysis</code>), 최종 보고서 및 발표 영상 제작.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Lightbox Modal -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose" title="닫기">✕</button>
+    <img id="lightboxImg" src="" alt="Enlarged figure" />
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <strong>한양대학교 금융공학개론 (Introduction to Financial Engineering) · Team #2</strong><br />
+        <span>Black-Litterman Portfolio Optimization with Factor-Alpha Screening and Machine Learning Views</span>
+      </div>
+      <div>
+        <span>GitHub Pages Static Research Archive · Built with Chart.js &amp; KaTeX</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="assets/js/csv_data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

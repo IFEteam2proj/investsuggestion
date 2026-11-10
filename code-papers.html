@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>코드 아키텍처 &amp; 참고문헌 라이브러리 | IFE Team #2</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="brand">
+        <span class="brand-badge">IFE Team #2</span>
+        <span>BL × Factor-Alpha × ML Research</span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link">메인 대시보드</a></li>
+        <li><a href="methodology.html" class="nav-link">방법론 &amp; 파이프라인</a></li>
+        <li><a href="results.html" class="nav-link">성과 분석 (2011–2020)</a></li>
+        <li><a href="qa-analysis.html" class="nav-link">Q&amp;A 검증 &amp; OOS (2021–2025)</a></li>
+        <li><a href="meetings.html" class="nav-link">회의록 &amp; 프로젝트 히스토리</a></li>
+        <li><a href="code-papers.html" class="nav-link active">코드 아키텍처 &amp; 문헌</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="theme-btn" id="themeToggle" title="테마 전환">🌙</button>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" title="메뉴 열기">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <span class="page-category">Codebase Architecture, Reproducibility &amp; Literature</span>
+      <h1>코드 아키텍처, 재현 가이드 및 학술 참고문헌 라이브러리</h1>
+      <p>
+        전체 파이프라인을 원클릭으로 재현할 수 있는 7단계 모듈형 코드베이스 구조(<code>1_Project_Data</code> ~ <code>7_QA_Analysis</code>), 
+        입출력 데이터 인터페이스, 문서 다운로드 센터, 그리고 본 연구의 이론적 토대가 된 29편의 핵심 학술 문헌을 정리했습니다.
+      </p>
+    </div>
+
+    <!-- Section 1: Download Center -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">1</span> 프로젝트 원문 문서 다운로드 센터 (Download Center)</h2>
+          <p class="section-desc">최종 제출된 국·영문 보고서(DOCX)와 21개 질문지 및 심층 실증 답안지(PDF) 원문을 직접 다운로드할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="badge badge-blue" style="margin-bottom:0.6rem;">Final Report (Korean)</span>
+          <h3 class="card-title" style="margin-bottom:0.4rem;">국문 최종 프로젝트 보고서</h3>
+          <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1rem;">
+            서론, 문헌 검토, 데이터 및 4단계 방법론, 40개 조합 성과 분석, 국면·에피소드 분석, 강건성·민감도 분석 및 한계점을 포함한 최종 수정본(Word).
+          </p>
+          <a href="assets/docs/Team2_Project_Report_KOREAN.docx" class="btn btn-accent" download>📥 국문 보고서 다운로드 (.docx)</a>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-blue" style="margin-bottom:0.6rem;">Final Report (English)</span>
+          <h3 class="card-title" style="margin-bottom:0.4rem;">영문 최종 프로젝트 보고서</h3>
+          <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1rem;">
+            <em>Black-Litterman Portfolio Optimization with Factor-Alpha Screening and Machine Learning Views</em> 영문 학술 논문 포맷 최종본(Word).
+          </p>
+          <a href="assets/docs/Team2_Project_Report_ENGLISH.docx" class="btn btn-accent" download>📥 영문 보고서 다운로드 (.docx)</a>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-green" style="margin-bottom:0.6rem;">Q&amp;A Empirical Audit</span>
+          <h3 class="card-title" style="margin-bottom:0.4rem;">21개 Q&amp;A 심층 답안 &amp; 질문지</h3>
+          <p style="font-size:0.86rem;color:var(--text-secondary);margin-bottom:1rem;">
+            타 팀이 제기한 21개 질문 원문(<code>Question_KOR.pdf</code>)과 2021–2025 미관측 OOS 검증까지 포함된 25페이지 분량의 상세 답안지(<code>Answer_KOR.pdf</code>).
+          </p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="assets/docs/Answer_KOR.pdf" class="btn btn-accent" download>📥 심층 답안지 (.pdf)</a>
+            <a href="assets/docs/Question_KOR.pdf" class="btn btn-secondary" download>📥 질문지 원본 (.pdf)</a>
+          </div>
+        </div>
+      </div>
+      <div class="callout success" style="margin-top: 1.25rem; margin-bottom: 0; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div>
+          <div class="callout-title">🚀 실전 웹 애플리케이션 배포: 오늘 당일 미국 주식 포트폴리오 추천 HTS 터미널 (Streamlit)</div>
+          <p style="margin-bottom:0;">
+            본 연구의 <code>FF3 스크리닝 → XGBoost 예측 뷰 → Black-Litterman 최적화</code> 파이프라인을 현재 미국 시총 상위 80%(319개 종목)에 실시간 연동하여, <strong>오늘 당일의 목표 종목 비중과 주문 주수(Shares)</strong>를 추천하는 라이브 웹 서비스도 함께 구축되어 있습니다.
+          </p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <a href="https://snpivsuggest.streamlit.app/" target="_blank" rel="noopener noreferrer" class="btn btn-accent">📈 실시간 추천 사이트 접속 ↗</a>
+          <a href="https://github.com/IFEteam2proj/investsuggestion" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">💻 GitHub 저장소 ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Codebase Architecture & Execution Guide -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">2</span> 모듈형 코드 아키텍처 및 재현 실행 가이드</h2>
+          <p class="section-desc">모든 코드는 단계별 독립 실행과 <code>run_all.py</code> 통합 실행을 모두 지원하도록 설계되었습니다.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom:0.65rem;">디렉토리 트리 구조 (Repository Map)</h3>
+          <pre class="code-block">IFE_BL_ML_프로젝트_질문_답변_추가/
+├── run_all.py                     # 전체 파이프라인 통합 실행 마스터 스크립트
+├── requirements.txt               # Python 패키지 의존성 명세
+├── 1_Project_Data/                # 원천 데이터 (CRSP, FF3, FRED GS1/FF)
+│   ├── Stock_Data_2000~2020_with_delist.csv
+│   ├── F-F_Research_Data_Factors.CSV
+│   ├── GS1.csv &amp; FEDFUNDS.csv
+│   └── data_2021_2025/            # WRDS 2021~2025 OOS 검증용 추가 데이터
+├── 2_Fama French 3 factor model security selection/
+│   ├── ff3_security_selection.py  # Stage 1: FF3 회귀 및 4단계 게이트 스크리닝
+│   └── ff3_selected_2000~2010.csv # 최종 선정된 20개 종목 및 회귀 통계량
+├── 3_setting_delta/
+│   └── calculate_delta.py         # 위험회피계수(δ) 탐색 및 시장 내재 δ 비교
+├── 4_Module_Based_ML/
+│   ├── run_ml_views.py            # Stage 2: 5개 ML 모델 워크포워드 학습 &amp; P,Q,Ω 생성
+│   └── outputs/{Model}/{Method}/  # 40개(5×8) 조합별 예측치 및 뷰 행렬 저장소
+├── 5_BL_Fin/
+│   ├── run_bl.py                  # Stage 3~4: 블랙-리터만 사후분포 및 SLSQP 최적화
+│   └── outputs/                   # 40개 조합 + 민감도·강건성 실험별 월별 비중(weights)
+├── 6_Backtest/
+│   ├── run_backtest.py            # 120개월 성과 평가, 국면 분석, 보고서 표·그림 생성
+│   ├── results/                   # 40개 조합 CAGR, Sharpe, Turnover, 월별 수익률 CSV
+│   ├── tables/                    # 보고서 수록 8대 핵심 표 (1_performance ~ 8_regime)
+│   └── figures/                   # 보고서 수록 고해상도 Figure 1 ~ Figure 5
+└── 7_QA_Analysis/
+    ├── run_qa_analysis.py         # Q&amp;A 대응 17개 대안 설정, 다중검정, 연간 재선정 실험
+    ├── run_oos_2021_2025.py       # 2021~2025년 미관측 표본 외(Unseen OOS) 전체 파이프라인
+    └── tables/                    # A2 ~ A12 검증 결과 테이블 일체</pre>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom:0.65rem;">단계별 CLI 실행 명령어 (Reproducibility Commands)</h3>
+          <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.6rem;">
+            Python 3.9+ 환경에서 의존성 설치 후 <code>run_all.py</code>를 통해 전 과정을 한 번에 재현하거나 특정 단계만 선택 실행할 수 있습니다:
+          </p>
+          <pre class="code-block"># 1. 필수 라이브러리 설치
+pip install -r requirements.txt
+
+# 2. 전체 파이프라인 원클릭 실행 (FF3 -> ML -> BL -> Backtest)
+python run_all.py
+
+# 3. 이미 생성된 ML 뷰를 활용하여 BL 최적화와 백테스트만 빠르게 재실행 (~2분)
+python run_all.py --skip-ml
+
+# 4. 특정 단계만 단독 실행
+python run_all.py --only ff3        # Stage 1: FF3 20종목 선정 및 부트스트랩 진단
+python run_all.py --only ml         # Stage 2: 5개 ML 모델 학습 및 8개 뷰(P,Q,Ω) 생성
+python run_all.py --only bl         # Stage 3: 블랙-리터만 사후 분포 및 최적 비중 도출
+python run_all.py --only backtest   # Stage 4: 성과 지표, 국면 분석 및 Figure 생성
+
+# 5. Q&amp;A 심층 검증 및 2021-2025 미관측 표본 외(OOS) 백테스트 실행
+python 7_QA_Analysis/run_qa_analysis.py
+python 7_QA_Analysis/run_oos_2021_2025.py</pre>
+
+          <div class="callout" style="margin-top:1rem;margin-bottom:0;">
+            <div class="callout-title">⚙️ 모듈 간 입출력 표준 인터페이스</div>
+            <p style="font-size:0.85rem;">
+              • <strong>Stage 2 → Stage 3 인터페이스:</strong> 모든 ML 모델과 뷰 방법론 조합은 <code>4_Module_Based_ML/outputs/{Model}/{Method}/</code> 경로에 동일한 포맷의 <code>P_matrix.npz</code>, <code>Q_views.csv</code>, <code>Omega_diag.csv</code>, <code>predictions_eval.csv</code>를 출력합니다.<br />
+              • <strong>Stage 3 → Stage 4 인터페이스:</strong> <code>5_BL_Fin/run_bl.py</code>는 각 조합별로 120개월 리밸런싱 비중인 <code>{Model}_{Method}_weights.csv</code>를 출력하며, <code>6_Backtest/run_backtest.py</code>가 이를 읽어 20bp 턴오버 거래비용과 상장폐지 재배분을 일괄 처리합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Academic Literature Library -->
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title"><span class="section-num">3</span> 학술 참고문헌 라이브러리 (29 Cited Papers &amp; Core Literature)</h2>
+          <p class="section-desc">최종 보고서 및 Q&amp;A 검증에서 인용된 29편의 핵심 학술 논문을 4개 연구 영역별로 분류했습니다.</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <span class="badge badge-blue" style="margin-bottom:0.6rem;">Category A · Portfolio Theory &amp; Black-Litterman Model</span>
+          <h3 class="card-title" style="margin-bottom:0.75rem;">블랙-리터만 모형 및 포트폴리오 최적화 이론</h3>
+          <ul style="font-size:0.86rem;color:var(--text-secondary);padding-left:1.15rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <li><strong>Markowitz, H. (1952).</strong> Portfolio Selection. <em>Journal of Finance</em>, 7(1), 77–91. — 평균-분산 최적화(MVO)의 효시.</li>
+            <li><strong>Michaud, R. O. (1989).</strong> The Markowitz Optimization Enigma: Is 'Optimized' Optimal? <em>Financial Analysts Journal</em>, 45(1), 31–42. — MVO의 기대수익률 추정오차 증폭(Error Maximization) 문제 규명.</li>
+            <li><strong>Black, F., &amp; Litterman, R. (1991).</strong> Asset Allocation: Combining Investor Views with Market Equilibrium. <em>Journal of Fixed Income</em>, 1(2), 7–18.</li>
+            <li><strong>Black, F., &amp; Litterman, R. (1992).</strong> Global Portfolio Optimization. <em>Financial Analysts Journal</em>, 48(5), 28–43. — 역최적화 균형수익률과 투자자 뷰의 베이지안 결합 프레임워크 제시.</li>
+            <li><strong>He, G., &amp; Litterman, R. (1999).</strong> The Intuition Behind Black-Litterman Model Portfolios. <em>Goldman Sachs Investment Management Research</em>. — 사후 분포 공식 유도 및 표준 파라미터($\delta=2.5, \tau=0.05$) 제시.</li>
+            <li><strong>Idzorek, T. M. (2005).</strong> A Step-by-Step Guide to the Black-Litterman Model: Incorporating User-Specified Confidence Levels. <em>Zephyr Associates</em>. — 신뢰도 기반 $\Omega = \tau\operatorname{diag}(P\Sigma P^\top)$ 닫힌 형태 공식 정립.</li>
+            <li><strong>Satchell, S., &amp; Scowcroft, A. (2000).</strong> A Demystification of the Black-Litterman Model. <em>Journal of Asset Management</em>, 1(2), 138–150.</li>
+            <li><strong>Meucci, A. (2008).</strong> The Black-Litterman Approach: Original Model and Extensions. <em>SSRN Working Paper</em>.</li>
+            <li><strong>Walters, J. (2014).</strong> The Black-Litterman Model in Detail. <em>SSRN Working Paper</em>. — $\tau$ 파라미터와 사후 공분산 업데이트에 대한 포괄적 수학적 정리.</li>
+            <li><strong>DeMiguel, V., Garlappi, L., &amp; Uppal, R. (2009).</strong> Optimal Versus Naive Diversification: How Inefficient is the 1/N Portfolio Strategy? <em>Review of Financial Studies</em>, 22(5), 1915–1953. — 균등비중(1/N) 벤치마크의 강건성 입증.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-green" style="margin-bottom:0.6rem;">Category B · Factor Pricing &amp; Alpha Screening</span>
+          <h3 class="card-title" style="margin-bottom:0.75rem;">팩터 자산가격결정 모형 및 알파 스크리닝</h3>
+          <ul style="font-size:0.86rem;color:var(--text-secondary);padding-left:1.15rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <li><strong>Fama, E. F., &amp; French, K. R. (1992).</strong> The Cross-Section of Expected Stock Returns. <em>Journal of Finance</em>, 47(2), 427–465.</li>
+            <li><strong>Fama, E. F., &amp; French, K. R. (1993).</strong> Common Risk Factors in the Returns on Stocks and Bonds. <em>Journal of Financial Economics</em>, 33(1), 3–56. — 시장(MKT), 규모(SMB), 가치(HML) 3팩터 모형 정립.</li>
+            <li><strong>Fama, E. F., &amp; French, K. R. (2015).</strong> A Five-Factor Asset Pricing Model. <em>Journal of Financial Economics</em>, 116(1), 1–22.</li>
+            <li><strong>Treynor, J. L., &amp; Black, F. (1973).</strong> How to Use Security Analysis to Improve Portfolio Selection. <em>Journal of Business</em>, 46(1), 66–86. — Appraisal Ratio($\alpha/\sigma_\varepsilon$) 기반 액티브 종목 선정 이론.</li>
+            <li><strong>Jegadeesh, N., &amp; Titman, S. (1993).</strong> Returns to Buying Winners and Selling Losers: Implications for Stock Market Efficiency. <em>Journal of Finance</em>, 48(1), 65–91. — 중기 주가 모멘텀 효과 규명.</li>
+            <li><strong>Carhart, M. M. (1997).</strong> On Persistence in Mutual Fund Performance. <em>Journal of Finance</em>, 52(1), 57–82.</li>
+            <li><strong>Ang, A., Hodrick, R. J., Xing, Y., &amp; Zhang, X. (2006).</strong> The Cross-Section of Volatility and Expected Returns. <em>Journal of Finance</em>, 61(1), 259–299. — 총변동성(<code>retvol</code>) 및 고유변동성(<code>idiovol</code>) 퍼즐 규명.</li>
+            <li><strong>Chordia, T., Roll, R., &amp; Subrahmanyam, A. (2001).</strong> Market Liquidity and Trading Activity. <em>Journal of Finance</em>, 56(2), 501–530. — 거래대금(<code>log_volume</code>) 특성 근거.</li>
+            <li><strong>Shumway, T. (1997).</strong> The Delisting Bias in CRSP Data. <em>Journal of Finance</em>, 52(1), 327–340. — 상장폐지 수익률(<code>DLRET</code>) 결합 표준 정립.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-purple" style="margin-bottom:0.6rem;">Category C · Machine Learning in Asset Pricing &amp; BL Views</span>
+          <h3 class="card-title" style="margin-bottom:0.75rem;">금융 머신러닝 수익률 예측 및 ML 기반 BL 뷰 결합</h3>
+          <ul style="font-size:0.86rem;color:var(--text-secondary);padding-left:1.15rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <li><strong>Gu, S., Kelly, B., &amp; Xiu, D. (2020).</strong> Empirical Asset Pricing via Machine Learning. <em>Review of Financial Studies</em>, 33(5), 2223–2273. — 풀링 패널 Expanding-Window ML 주가 예측의 표준 프레임워크.</li>
+            <li><strong>Chen, T., &amp; Guestrin, C. (2016).</strong> XGBoost: A Scalable Tree Boosting System. <em>Proceedings of KDD</em>, 785–794.</li>
+            <li><strong>Zou, H., &amp; Hastie, T. (2005).</strong> Regularization and Variable Selection via the Elastic Net. <em>Journal of the Royal Statistical Society: Series B</em>, 67(2), 301–320.</li>
+            <li><strong>Breiman, L. (2001).</strong> Random Forests. <em>Machine Learning</em>, 45(1), 5–32.</li>
+            <li><strong>Vaswani, A., et al. (2017).</strong> Attention Is All You Need. <em>Advances in Neural Information Processing Systems (NeurIPS)</em>, 30.</li>
+            <li><strong>Kara, M., Ulucan, A., &amp; Atici, K. B. (2019).</strong> A Hybrid Approach for Generating Investor Views in Black–Litterman Model. <em>Expert Systems with Applications</em>, 128, 256–270.</li>
+            <li><strong>Barroso, P., &amp; Saxena, K. (2022).</strong> Lest We Forget: Learn from Out-of-Sample Forecast Errors When Optimizing Portfolios. <em>Review of Financial Studies</em>, 35(3), 1222–1278.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="badge badge-amber" style="margin-bottom:0.6rem;">Category D · Multiple Testing &amp; Statistical Inference</span>
+          <h3 class="card-title" style="margin-bottom:0.75rem;">다중검정 보정 및 부트스트랩 추론</h3>
+          <ul style="font-size:0.86rem;color:var(--text-secondary);padding-left:1.15rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <li><strong>White, H. (2000).</strong> A Reality Check for Data Snooping. <em>Econometrica</em>, 68(5), 1097–1126. — 복수의 투자전략 탐색 시 종속성을 보존한 부트스트랩 최고 성과 검정법.</li>
+            <li><strong>Politis, D. N., &amp; Romano, J. P. (1994).</strong> The Stationary Bootstrap. <em>Journal of the American Statistical Association</em>, 89(428), 1303–1313. — 시계열 자기상관을 보존하는 기하분포 블록 부트스트랩.</li>
+            <li><strong>Benjamini, Y., &amp; Hochberg, Y. (1995).</strong> Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing. <em>Journal of the Royal Statistical Society: Series B</em>, 57(1), 289–300.</li>
+            <li><strong>Holm, S. (1979).</strong> A Simple Sequentially Rejective Multiple Test Procedure. <em>Scandinavian Journal of Statistics</em>, 6(2), 65–70.</li>
+            <li><strong>Harvey, C. R., Liu, Y., &amp; Zhu, H. (2016).</strong> … and the Cross-Section of Expected Returns. <em>Review of Financial Studies</em>, 29(1), 5–68. — 금융 팩터 및 알파 검정에서의 다중검정 기준 제시.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <strong>한양대학교 금융공학개론 (Introduction to Financial Engineering) · Team #2</strong><br />
+        <span>코드 아키텍처, 재현 가이드 및 학술 참고문헌 라이브러리</span>
+      </div>
+      <div>
+        <a href="index.html" class="btn btn-accent">← 메인 대시보드로 돌아가기</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="assets/js/csv_data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
