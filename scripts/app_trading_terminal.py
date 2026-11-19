@@ -8,7 +8,7 @@ import sys
 import json
 import time
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -17,9 +17,11 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import streamlit as st
+from scipy import stats
 from scipy.optimize import minimize
 from statsmodels.tsa.ar_model import AutoReg
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import xgboost as xgb
 
 # =============================================================================
 # Path & Directory Configurations
@@ -43,6 +45,7 @@ PATH_BL_SUMMARY = os.path.join(RESULTS_DIR, 'bl_portfolio_summary.csv')
 PATH_BL_HISTORY = os.path.join(RESULTS_DIR, 'bl_weights_history.csv')
 PATH_BL_BACKTEST = os.path.join(RESULTS_DIR, 'bl_backtest_performance.csv')
 PATH_VIEWS_READABLE = os.path.join(BL_DATA_DIR, 'views_readable.csv')
+PATH_FACTORS = os.path.join(FF3_DATA_DIR, 'F-F_Research_Data_Factors.csv')
 
 # =============================================================================
 # Streamlit Page Settings & Clean CSS
@@ -209,12 +212,53 @@ def load_all_terminal_data():
     else:
         data['prices_daily'] = pd.DataFrame()
 
+    PATH_VOL_CACHE_DIR = os.path.join(RAW_DATA_DIR, 'volume_cache.parquet')
+    PATH_VOL_CACHE_DOT = os.path.join(RAW_DATA_DIR, '.cache', 'volume_cache.parquet')
+    if os.path.exists(PATH_VOL_CACHE_DIR):
+        data['volume_daily'] = pd.read_parquet(PATH_VOL_CACHE_DIR)
+    elif os.path.exists(PATH_VOL_CACHE_DOT):
+        data['volume_daily'] = pd.read_parquet(PATH_VOL_CACHE_DOT)
+    else:
+        data['volume_daily'] = pd.DataFrame()
+
+    if os.path.exists(PATH_FACTORS):
+        with open(PATH_FACTORS, 'r', encoding='utf-8', errors='latin-1') as f:
+            lines = f.read().splitlines()
+        rows = []
+        for ln in lines:
+            p = [x.strip() for x in ln.split(',')]
+            if len(p) == 5 and p[0].isdigit() and len(p[0]) == 6:
+                rows.append(p)
+        ff = pd.DataFrame(rows, columns=['ym', 'MKT_RF', 'SMB', 'HML', 'RF'])
+        ff['ym'] = pd.PeriodIndex(ff['ym'].str[:4] + '-' + ff['ym'].str[4:], freq='M')
+        data['factors_ff'] = ff.set_index('ym').astype(float) / 100.0
+    else:
+        data['factors_ff'] = pd.DataFrame()
+
+    if not data['prices_daily'].empty:
+        m_px = data['prices_daily'].resample('ME').last()
+        m_ret = m_px.pct_change().iloc[1:]
+        m_px.index = m_px.index.to_period('M')
+        m_ret.index = m_ret.index.to_period('M')
+        data['monthly_prices_full'] = m_px
+        data['returns_monthly_full'] = m_ret
+    else:
+        data['monthly_prices_full'] = pd.DataFrame()
+        data['returns_monthly_full'] = pd.DataFrame()
+
+    if not data['volume_daily'].empty:
+        m_vol = data['volume_daily'].resample('ME').sum()
+        m_vol.index = m_vol.index.to_period('M')
+        data['monthly_volume_full'] = m_vol
+    else:
+        data['monthly_volume_full'] = pd.DataFrame()
+
     if os.path.exists(PATH_RETURNS_WIDE):
         ret_wide = pd.read_csv(PATH_RETURNS_WIDE, index_col=0, parse_dates=[0])
         ret_wide.index = ret_wide.index.to_period('M')
         data['returns_monthly'] = ret_wide
     else:
-        data['returns_monthly'] = pd.DataFrame()
+        data['returns_monthly'] = data['returns_monthly_full']
 
     return data
 
@@ -234,63 +278,362 @@ def execute_pipeline_command(args_list: List[str] = None):
         st.code(res.stderr or res.stdout)
 
 
-def recalculate_bl_weights(
+def _cum_ret(ret: pd.DataFrame, first: int, last: int) -> pd.DataFrame:
+    g = 1.0 + ret
+    out = g.shift(last)
+    for j in range(last + 1, first + 1):
+        out = out * g.shift(j)
+    return out - 1.0
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def run_point_in_time_quant_model(
+    selected_date_str: str,
     tau: float,
     delta: float,
     max_weight: float,
-    df_weights: pd.DataFrame,
-    returns_wide: pd.DataFrame
-) -> pd.DataFrame:
-    """Instant interactive recalculation of Black-Litterman weights on slider adjustments."""
-    if df_weights.empty or returns_wide.empty:
-        return df_weights
+    t_cut: float
+) -> Dict:
+    """
+    Point-in-Time (기준일 시점) 동적 퀀트 엔진:
+    지정된 기준일(selected_date_str)까지의 데이터만 사용하여
+    1) FF3 3팩터 OLS 종목 선정 (10년 롤링 윈도우)
+    2) XGBoost 크로스섹션 견해(P, Q, Omega) 생성
+    3) Black-Litterman 사후 기대수익률 및 최적 비중(SLSQP) 산출
+    4) 기준일 당시 실제 종가 매핑
+    """
+    data = load_all_terminal_data()
+    px_daily = data['prices_daily']
+    m_ret_full = data['returns_monthly_full']
+    m_px_full = data['monthly_prices_full']
+    m_vol_full = data['monthly_volume_full']
+    ff = data['factors_ff']
+    univ = data['universe']
 
-    assets = df_weights['Ticker'].tolist()
-    valid_assets = [a for a in assets if a in returns_wide.columns]
-    if len(valid_assets) < len(assets):
-        return df_weights
+    if px_daily.empty or m_ret_full.empty or ff.empty:
+        return {
+            'ok': False,
+            'warning': '기초 시계열/팩터 데이터가 부족하여 사전 계산된 최신 결과를 표시합니다.',
+            'weights': data['weights_latest'],
+            'selected': data['selected'],
+            'all_reg': data['all_reg'],
+            'prices_daily': px_daily,
+            'returns_monthly': data['returns_monthly'],
+            'window_months': 120,
+            'port_stats': None,
+        }
 
-    ret_sub = returns_wide[valid_assets].dropna().tail(36)
-    Sigma = ret_sub.cov().to_numpy()
+    as_of_ts = pd.Timestamp(selected_date_str)
+    as_of_ym = pd.Period(selected_date_str, freq='M')
 
-    er_bl = df_weights['BL_Expected_Return_Ann'].to_numpy() / 12.0
+    px_pit = px_daily.loc[:as_of_ts]
+    ret_pit = m_ret_full.loc[:as_of_ym]
+    if px_pit.empty or len(ret_pit) < 24:
+        return {
+            'ok': False,
+            'warning': f'{selected_date_str} 기준 가용 월간 데이터가 부족합니다 (최소 24개월 필요). 2011년 이후 날짜를 선택해주세요.',
+            'weights': data['weights_latest'],
+            'selected': data['selected'],
+            'all_reg': data['all_reg'],
+            'prices_daily': px_daily,
+            'returns_monthly': data['returns_monthly'],
+            'window_months': 0,
+            'port_stats': None,
+        }
 
-    n = len(assets)
-    def obj(w):
-        return -(w @ er_bl - 0.5 * delta * (w @ Sigma @ w))
+    # -------------------------------------------------------------------------
+    # 1. Point-in-Time FF3 3-Factor OLS Screening (Trailing up to 120M)
+    # -------------------------------------------------------------------------
+    sub_ret = ret_pit.tail(120)
+    common = sub_ret.index.intersection(ff.index)
+    R = sub_ret.loc[common].dropna(axis=1)
+    F = ff.loc[common]
+    T = len(common)
 
-    upper = max(max_weight, 1.0 / n + 1e-4)
-    bounds = [(0.0, upper) for _ in range(n)]
-    cons = [{'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0}]
-    init_w = np.ones(n) / n
+    if T < 24 or R.shape[1] < 5:
+        return {
+            'ok': False,
+            'warning': f'{selected_date_str} 기준 FF3 팩터 공통 구간이 부족합니다 (T={T}).',
+            'weights': data['weights_latest'],
+            'selected': data['selected'],
+            'all_reg': data['all_reg'],
+            'prices_daily': px_pit,
+            'returns_monthly': ret_pit,
+            'window_months': T,
+            'port_stats': None,
+        }
 
-    res = minimize(obj, init_w, method='SLSQP', bounds=bounds, constraints=cons)
-    if res.success:
-        new_w = np.clip(res.x, 0.0, upper)
-        new_w /= new_w.sum()
+    Y = R.sub(F['RF'], axis=0).to_numpy()
+    X = np.column_stack([np.ones(T), F[['MKT_RF', 'SMB', 'HML']].to_numpy()])
+    XtX_inv = np.linalg.inv(X.T @ X)
+    B = XtX_inv @ (X.T @ Y)
+    E = Y - X @ B
+    s2 = (E ** 2).sum(axis=0) / max(T - 4, 1)
+    se = np.sqrt(np.outer(np.diag(XtX_inv), s2))
+    Tst = B / np.where(se > 0, se, np.nan)
+    denom_r2 = ((Y - Y.mean(axis=0)) ** 2).sum(axis=0)
+    r2 = 1.0 - (E ** 2).sum(axis=0) / np.where(denom_r2 > 0, denom_r2, np.nan)
+
+    res = pd.DataFrame({
+        'Ticker': R.columns,
+        'alpha': B[0],
+        'b_mkt': B[1],
+        's_smb': B[2],
+        'h_hml': B[3],
+        't_alpha': Tst[0],
+        'r2': r2,
+        'resid_sd': np.sqrt(s2),
+        'nobs': T,
+        'ex_mean_m': Y.mean(axis=0),
+        'ex_sd_m': Y.std(axis=0, ddof=1),
+        'zero_ret_share': (np.abs(R.to_numpy()) < 1e-9).mean(axis=0),
+    })
+
+    # Map universe metadata (PERMNO, name, marketCap)
+    if not univ.empty:
+        tkr_col = 'yahoo_ticker' if 'yahoo_ticker' in univ.columns else ('symbol' if 'symbol' in univ.columns else univ.columns[0])
+        u_map = univ.drop_duplicates(subset=[tkr_col]).set_index(tkr_col)
+        res['PERMNO'] = res['Ticker'].map(u_map['PERMNO']) if 'PERMNO' in u_map.columns else np.nan
+        res['name'] = res['Ticker'].map(u_map['name']).fillna(res['Ticker']) if 'name' in u_map.columns else res['Ticker']
+        res['marketCap'] = res['Ticker'].map(u_map['marketCap']).fillna(1e9) if 'marketCap' in u_map.columns else 1e9
     else:
-        new_w = init_w
+        res['PERMNO'] = np.nan
+        res['name'] = res['Ticker']
+        res['marketCap'] = 1e9
 
-    updated = df_weights.copy()
-    updated['BL_Constrained_Weight'] = np.round(new_w, 4)
-    updated['Tilt_vs_MarketCap'] = np.round(updated['BL_Constrained_Weight'] - updated['MarketCap_Weight'], 4)
-    return updated
+    res['PERMNO'] = pd.to_numeric(res['PERMNO'], errors='coerce').astype('Int64')
+    res['alpha_ann'] = res['alpha'] * 12.0
+    res['sharpe_raw'] = res['ex_mean_m'] / np.where(res['ex_sd_m'] > 0, res['ex_sd_m'], np.nan) * np.sqrt(12.0)
+
+    # Sigma Guard & Liquidity Gate (identical to run_ff3.py)
+    sd_tail = res['ex_sd_m'].quantile(0.05)
+    sigma_flag = (
+        (res['ex_sd_m'] < 0.015) |
+        (res['zero_ret_share'] > 0.30) |
+        ~np.isfinite(res['sharpe_raw']) |
+        ((res['sharpe_raw'].abs() > 3.0) & (res['ex_sd_m'] < sd_tail))
+    )
+    res['sharpe'] = res['sharpe_raw'].where(~sigma_flag)
+    liq_threshold = res['marketCap'].quantile(0.20)
+    res['liq_pass'] = res['marketCap'] >= liq_threshold
+    res['gate_pass'] = (
+        (res['alpha'] > 0) &
+        (res['t_alpha'] >= t_cut) &
+        res['liq_pass'] &
+        res['sharpe'].notna()
+    )
+
+    res = res.sort_values('t_alpha', ascending=False).reset_index(drop=True)
+    res.insert(0, 'rank_all', np.arange(1, len(res) + 1))
+
+    sel = res[res['gate_pass']].copy().reset_index(drop=True)
+    warning_msg = None
+    if len(sel) < 2:
+        warning_msg = f"기준일({selected_date_str})에서 t(alpha) ≥ {t_cut:.1f} 게이트를 통과한 종목이 {len(sel)}개뿐이어서, t(alpha) 상위 5개 종목으로 대체 산출했습니다."
+        sel = res[res['sharpe'].notna() & res['liq_pass']].head(5).copy().reset_index(drop=True)
+    sel.insert(0, 'rank', np.arange(1, len(sel) + 1))
+
+    # -------------------------------------------------------------------------
+    # 2. Point-in-Time Covariance & Equilibrium Prior (Pi)
+    # -------------------------------------------------------------------------
+    assets = sel['Ticker'].tolist()
+    n_assets = len(assets)
+    ret_assets = ret_pit[assets].dropna(how='all')
+    ret_cov = ret_assets.dropna().tail(36)
+    if len(ret_cov) < 12:
+        ret_cov = ret_assets.fillna(0.0).tail(36)
+
+    Sigma = ret_cov.cov().to_numpy()
+    # Small ridge for numerical stability
+    Sigma = Sigma + np.eye(n_assets) * 1e-6
+
+    mc_arr = sel['marketCap'].to_numpy(dtype=float)
+    w_mkt = mc_arr / mc_arr.sum() if mc_arr.sum() > 0 else np.ones(n_assets) / n_assets
+    Pi = delta * (Sigma @ w_mkt)
+
+    # -------------------------------------------------------------------------
+    # 3. Point-in-Time XGBoost Views (P, Q, Omega) & Black-Litterman Posterior
+    # -------------------------------------------------------------------------
+    FEATURES = ["mom1m", "mom6m", "mom12m", "chmom", "retvol", "dolvol", "beta", "idiovol"]
+    mu_xgb = Pi.copy()
+    omega_val = 0.0025
+
+    try:
+        sub_ret_ml = ret_pit[assets]
+        sub_px_ml = m_px_full.loc[:as_of_ym, assets] if not m_px_full.empty else pd.DataFrame(100.0, index=sub_ret_ml.index, columns=assets)
+        if not m_vol_full.empty:
+            valid_vol_cols = [a for a in assets if a in m_vol_full.columns]
+            sub_vol_ml = m_vol_full.loc[:as_of_ym].reindex(columns=assets).fillna(1e6)
+        else:
+            sub_vol_ml = pd.DataFrame(1e6, index=sub_ret_ml.index, columns=assets)
+
+        f_ml = ff.reindex(sub_ret_ml.index).ffill()
+        mkt_s = f_ml['MKT_RF']
+        ex_ml = sub_ret_ml.sub(f_ml['RF'], axis=0)
+        roll_fn = lambda x: x.rolling(12, min_periods=12).mean()
+        var_m = roll_fn(mkt_s ** 2) - roll_fn(mkt_s) ** 2
+        beta_ml = (roll_fn(ex_ml.mul(mkt_s, axis=0)) - roll_fn(ex_ml).mul(roll_fn(mkt_s), axis=0)).div(var_m, axis=0)
+        var_ex = roll_fn(ex_ml ** 2) - roll_fn(ex_ml) ** 2
+
+        raw_feats = {
+            "mom1m": sub_ret_ml,
+            "mom6m": _cum_ret(sub_ret_ml, 5, 1),
+            "mom12m": _cum_ret(sub_ret_ml, 11, 1),
+            "chmom": _cum_ret(sub_ret_ml, 5, 1) - _cum_ret(sub_ret_ml, 11, 6),
+            "retvol": sub_ret_ml.rolling(12, min_periods=12).std(),
+            "dolvol": np.log((sub_px_ml.reindex(sub_ret_ml.index) * sub_vol_ml.reindex(sub_ret_ml.index)).clip(lower=1.0)),
+            "beta": beta_ml,
+            "idiovol": np.sqrt((var_ex - beta_ml.pow(2).mul(var_m, axis=0)).clip(lower=0)),
+        }
+        cols_dict = {}
+        for fname, wide in raw_feats.items():
+            ranked = (2.0 * wide.round(10).rank(axis=1, pct=True) - 1.0).where(wide.notna())
+            cols_dict[fname] = ranked.stack(future_stack=True)
+        panel = pd.DataFrame(cols_dict)
+        panel["has_history"] = raw_feats["mom12m"].notna().stack(future_stack=True)
+        panel["target"] = sub_ret_ml.shift(-1).stack(future_stack=True)
+        panel.index.names = ["ym", "Ticker"]
+        panel[FEATURES] = panel[FEATURES].fillna(0.0)
+
+        p_months = panel.index.get_level_values("ym")
+        pred_ym = p_months.max()
+        train_df = panel[(p_months < pred_ym) & panel["has_history"] & panel["target"].notna()]
+        pred_df = panel.loc[pred_ym].reindex(assets)
+
+        train_yms = train_df.index.get_level_values("ym").unique().sort_values()
+        if len(train_yms) >= 18 and len(pred_df) == n_assets:
+            val_cut = train_yms[-min(12, max(4, len(train_yms) // 5))]
+            fit_part = train_df[train_df.index.get_level_values("ym") < val_cut]
+            val_part = train_df[train_df.index.get_level_values("ym") >= val_cut]
+
+            params = {
+                "objective": "reg:squarederror",
+                "max_depth": 3,
+                "eta": 0.05,
+                "seed": 42,
+                "tree_method": "hist",
+                "nthread": 0,
+            }
+            dtr = xgb.DMatrix(fit_part[FEATURES].to_numpy(dtype=np.float32), label=fit_part["target"].to_numpy())
+            dval = xgb.DMatrix(val_part[FEATURES].to_numpy(dtype=np.float32), label=val_part["target"].to_numpy())
+            bst = xgb.train(
+                params, dtr,
+                num_boost_round=150,
+                evals=[(dval, "val")],
+                early_stopping_rounds=20,
+                verbose_eval=False
+            )
+            best_n = bst.best_iteration + 1
+            d_full = xgb.DMatrix(train_df[FEATURES].to_numpy(dtype=np.float32), label=train_df["target"].to_numpy())
+            final_bst = xgb.train(params, d_full, num_boost_round=best_n)
+            mu_xgb = final_bst.predict(xgb.DMatrix(pred_df[FEATURES].to_numpy(dtype=np.float32))).astype(float)
+
+            val_preds = bst.predict(dval, iteration_range=(0, best_n))
+            val_mse = float(np.mean((val_part["target"].to_numpy() - val_preds) ** 2))
+            omega_val = float(np.clip(val_mse, 1e-4, 0.05))
+    except Exception:
+        mu_xgb = Pi + sel['alpha'].to_numpy() * 0.5
+        omega_val = 0.0025
+
+    # Construct Relative View P (Top k Long, Bottom k Short)
+    k_ls = max(1, min(3, n_assets // 3))
+    order = np.argsort(-mu_xgb)
+    P_row = np.zeros(n_assets)
+    P_row[order[:k_ls]] = 1.0 / k_ls
+    P_row[order[-k_ls:]] = -1.0 / k_ls
+    P = P_row.reshape(1, -1)
+    Q = np.array([float(P_row @ mu_xgb)])
+    Omega = np.array([[omega_val]])
+
+    # Black-Litterman Posterior Formula
+    tau_Sigma = tau * Sigma
+    P_tau_Sigma = P @ tau_Sigma
+    view_cov_inv = np.linalg.inv(P_tau_Sigma @ P.T + Omega)
+    er_bl = Pi + (tau_Sigma @ P.T @ view_cov_inv @ (Q - P @ Pi)).flatten()
+    M_post = tau_Sigma - tau_Sigma @ P.T @ view_cov_inv @ P_tau_Sigma
+    Sigma_BL = Sigma + M_post
+
+    # Constrained Optimization (0 <= w_i <= max_weight, sum w_i = 1)
+    def obj(w):
+        return -(w @ er_bl - 0.5 * delta * (w @ Sigma_BL @ w))
+
+    upper = max(max_weight, 1.0 / n_assets + 1e-4)
+    bounds = [(0.0, upper) for _ in range(n_assets)]
+    cons = [{'type': 'eq', 'fun': lambda w: np.sum(w) - 1.0}]
+    init_w = np.ones(n_assets) / n_assets
+    opt = minimize(obj, init_w, method='SLSQP', bounds=bounds, constraints=cons)
+    if opt.success:
+        w_const = np.clip(opt.x, 0.0, upper)
+        w_const /= w_const.sum()
+    else:
+        w_const = init_w
+
+    # Point-in-Time actual closing prices as of selected_date
+    pit_prices = []
+    for a in assets:
+        if a in px_pit.columns:
+            s = px_pit[a].dropna()
+            pit_prices.append(round(float(s.iloc[-1]), 2) if not s.empty else 100.0)
+        else:
+            pit_prices.append(100.0)
+
+    df_weights_pit = pd.DataFrame({
+        'Ticker': assets,
+        'Name': sel['name'].tolist(),
+        'Last_Price': pit_prices,
+        'MarketCap_Weight': np.round(w_mkt, 4),
+        'Equal_Weight': np.round(np.ones(n_assets) / n_assets, 4),
+        'Prior_Return_Ann': np.round(Pi * 12.0, 4),
+        'XGBoost_Return_Ann': np.round(mu_xgb * 12.0, 4),
+        'BL_Expected_Return_Ann': np.round(er_bl * 12.0, 4),
+        'BL_Constrained_Weight': np.round(w_const, 4),
+        'Tilt_vs_MarketCap': np.round(w_const - w_mkt, 4),
+    })
+
+    port_ret_ann = float(w_const @ er_bl * 12.0)
+    port_vol_ann = float(np.sqrt(w_const @ Sigma @ w_const) * np.sqrt(12.0))
+    port_sharpe = (port_ret_ann - 0.025) / port_vol_ann if port_vol_ann > 0 else 0.0
+
+    # Trailing 36M realized max drawdown of this point-in-time portfolio
+    port_hist_m = (ret_cov @ w_const)
+    cum_w = (1.0 + port_hist_m).cumprod()
+    dd_series = cum_w / cum_w.cummax() - 1.0
+    port_mdd = float(dd_series.min()) if len(dd_series) > 0 else -0.20
+
+    return {
+        'ok': True,
+        'warning': warning_msg,
+        'weights': df_weights_pit,
+        'selected': sel,
+        'all_reg': res,
+        'prices_daily': px_pit,
+        'returns_monthly': ret_pit,
+        'window_months': T,
+        'actual_price_date': px_pit.index[-1].strftime('%Y-%m-%d'),
+        'port_stats': {
+            'ann_ret_pct': port_ret_ann * 100.0,
+            'ann_vol_pct': port_vol_ann * 100.0,
+            'sharpe': port_sharpe,
+            'mdd_pct': port_mdd * 100.0,
+        },
+    }
 
 
 # =============================================================================
 # Load Terminal Data
 # =============================================================================
 terminal_data = load_all_terminal_data()
-df_weights = terminal_data['weights_latest']
-df_selected = terminal_data['selected']
-df_all_reg = terminal_data['all_reg']
 df_summary = terminal_data['summary']
 df_history = terminal_data['history']
 df_backtest = terminal_data['backtest']
 df_views = terminal_data['views']
-df_prices_daily = terminal_data['prices_daily']
-df_returns_monthly = terminal_data['returns_monthly']
 df_univ = terminal_data['universe']
+
+max_avail_date = (
+    terminal_data['prices_daily'].index[-1].date()
+    if not terminal_data['prices_daily'].empty
+    else datetime.now().date()
+)
 
 # =============================================================================
 # Sidebar: Control Terminal & Model Hyperparameters
@@ -301,11 +644,16 @@ st.sidebar.markdown("---")
 # Portfolio Capital Setting
 capital = st.sidebar.number_input("💰 운용 총 자본금 ($ USD)", min_value=1000, max_value=100_000_000, value=100_000, step=10_000)
 
-# Rebalancing Date
-today_str = datetime.now().strftime("%Y-%m-%d")
-selected_date = st.sidebar.date_input("📅 리밸런싱 기준일", value=datetime.now())
+# Rebalancing Date (Point-in-Time supported from 2011-01-01 to latest data date)
+selected_date = st.sidebar.date_input(
+    "📅 리밸런싱 기준일",
+    value=max_avail_date,
+    min_value=date(2011, 1, 1),
+    max_value=max(datetime.now().date(), max_avail_date),
+    help="기준일을 변경하면 해당 날짜까지의 데이터만 사용하여 FF3 종목 선정, XGBoost 견해, BL 비중, 당시 실제 주가를 즉시 재계산합니다."
+)
 
-st.sidebar.markdown("#### ⚙️ Black-Litterman 파라미터")
+st.sidebar.markdown("#### ⚙️ Black-Litterman & FF3 파라미터")
 param_tau = st.sidebar.slider("타우 (Tau, 견해 비중계수)", min_value=0.01, max_value=0.50, value=0.10, step=0.01)
 param_delta = st.sidebar.slider("위험회피계수 (Delta)", min_value=1.0, max_value=10.0, value=3.0, step=0.5)
 param_max_weight = st.sidebar.slider("단일 종목 최대 비중 상한 (Cap)", min_value=0.10, max_value=0.40, value=0.20, step=0.02)
@@ -327,17 +675,25 @@ if btn_pipeline:
     ])
     st.rerun()
 
-# Apply instant recalculation if parameters tweaked
-if not df_weights.empty and not df_returns_monthly.empty:
-    df_weights_active = recalculate_bl_weights(
+if btn_recalc:
+    run_point_in_time_quant_model.clear()
+    st.toast(f"🔄 {selected_date.strftime('%Y-%m-%d')} 기준으로 FF3 종목 선정 및 BL 비중을 재계산했습니다.")
+
+# Run Point-in-Time Dynamic Model (Recomputes automatically when date or any slider changes!)
+with st.spinner(f"⏳ {selected_date.strftime('%Y-%m-%d')} 기준 FF3 종목 선정 및 BL 최적화 계산 중..."):
+    pit_res = run_point_in_time_quant_model(
+        selected_date_str=selected_date.strftime('%Y-%m-%d'),
         tau=param_tau,
         delta=param_delta,
         max_weight=param_max_weight,
-        df_weights=df_weights,
-        returns_wide=df_returns_monthly
+        t_cut=param_t_cut
     )
-else:
-    df_weights_active = df_weights.copy()
+
+df_weights_active = pit_res['weights']
+df_selected = pit_res['selected']
+df_all_reg = pit_res['all_reg']
+df_prices_daily = pit_res['prices_daily']
+df_returns_monthly = pit_res['returns_monthly']
 
 # =============================================================================
 # Top Ticker & Metric Status Cards (Native, Clean, High Contrast)
@@ -345,7 +701,13 @@ else:
 n_selected = len(df_selected) if not df_selected.empty else 0
 total_mc_trillion = (df_univ['marketCap'].sum() / 1e12) if not df_univ.empty else 0.0
 
-if not df_summary.empty:
+if pit_res.get('port_stats'):
+    ps = pit_res['port_stats']
+    ann_ret_pct = ps['ann_ret_pct']
+    ann_vol_pct = ps['ann_vol_pct']
+    sharpe_val = ps['sharpe']
+    mdd_pct = ps['mdd_pct']
+elif not df_summary.empty:
     bl_row = df_summary[df_summary['Portfolio'].str.contains('Constrained')].iloc[0]
     ann_ret_pct = bl_row['Annualized_Return'] * 100
     ann_vol_pct = bl_row['Annualized_Volatility'] * 100
@@ -355,14 +717,21 @@ else:
     ann_ret_pct, ann_vol_pct, sharpe_val, mdd_pct = 49.38, 28.15, 1.64, -27.31
 
 st.title("📈 미국 상위 80% 주식 퀀트 투자 터미널")
-st.caption(f"기준일: {selected_date.strftime('%Y-%m-%d')} | 유니버스: 시총 상위 80% ({len(df_univ)}개, ${total_mc_trillion:.1f}T) | 모델: FF3 OLS + XGBoost + Black-Litterman")
+actual_px_dt = pit_res.get('actual_price_date', selected_date.strftime('%Y-%m-%d'))
+win_m = pit_res.get('window_months', 120)
+is_historical_mode = selected_date < (max_avail_date - timedelta(days=7))
+mode_badge = f"🕰️ 과거 시점 백테스트 모드 ({actual_px_dt} 종가 기준)" if is_historical_mode else f"🟢 최신 기준일 모드 ({actual_px_dt} 종가 기준)"
+st.caption(f"{mode_badge} | FF3 회귀 윈도우: {win_m}개월 | t-Cut: {param_t_cut:.1f} | τ={param_tau:.2f}, δ={param_delta:.1f}, Cap={param_max_weight*100:.0f}%")
+
+if pit_res.get('warning'):
+    st.warning(pit_res['warning'])
 
 m_c1, m_c2, m_c3, m_c4, m_c5 = st.columns(5)
-m_c1.metric("선정 종목 수", f"{n_selected} 종목", f"유니버스 {len(df_univ)}개 중")
-m_c2.metric("BL 포트폴리오 연수익률", f"{ann_ret_pct:.1f}%", "연환산 기대")
-m_c3.metric("포트폴리오 연 변동성", f"{ann_vol_pct:.1f}%", "36M 공분산")
-m_c4.metric("샤프 지수 (Sharpe)", f"{sharpe_val:.2f}", "무위험 2.5% 기준")
-m_c5.metric("역대 최대 낙폭(MDD)", f"{mdd_pct:.1f}%", "68개월 백테스트")
+m_c1.metric("선정 종목 수", f"{n_selected} 종목", f"유니버스 {len(df_all_reg)}개 중")
+m_c2.metric("BL 포트폴리오 연수익률", f"{ann_ret_pct:.1f}%", "사후 기대 E[R]")
+m_c3.metric("포트폴리오 연 변동성", f"{ann_vol_pct:.1f}%", "직전 36M 공분산")
+m_c4.metric("기대 샤프 지수", f"{sharpe_val:.2f}", "무위험 2.5% 기준")
+m_c5.metric("직전 36M 최대 낙폭", f"{mdd_pct:.1f}%", f"{actual_px_dt} 기준")
 
 st.markdown("---")
 
